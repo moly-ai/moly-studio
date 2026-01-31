@@ -1,4 +1,5 @@
 pub mod chats;
+pub mod mcp_servers;
 pub mod moly_client;
 pub mod preferences;
 pub mod providers;
@@ -6,6 +7,7 @@ pub mod providers_manager;
 pub mod store;
 
 pub use chats::{ChatData, ChatId, Chats};
+pub use mcp_servers::{InputConfig, McpServer, McpServersConfig};
 pub use moly_client::{MolyClient, ServerConnectionStatus};
 pub use preferences::Preferences;
 pub use providers::{ProviderPreferences, ProviderId, ProviderType, ProviderConnectionStatus, get_supported_providers};
