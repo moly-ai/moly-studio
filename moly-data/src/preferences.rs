@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+use crate::mcp_servers::McpServersConfig;
 use crate::providers::{get_supported_providers, ProviderId, ProviderPreferences};
 
 const PREFERENCES_FILENAME: &str = "preferences.json";
@@ -27,6 +28,10 @@ pub struct Preferences {
     /// Currently selected chat model
     #[serde(default)]
     pub current_chat_model: Option<String>,
+
+    /// MCP servers configuration
+    #[serde(default)]
+    pub mcp_servers_config: McpServersConfig,
 }
 
 fn default_sidebar_expanded() -> bool {
@@ -41,6 +46,7 @@ impl Default for Preferences {
             current_view: "Chat".to_string(),
             providers_preferences: get_supported_providers(),
             current_chat_model: None,
+            mcp_servers_config: McpServersConfig::new(),
         }
     }
 }
@@ -204,5 +210,42 @@ impl Preferences {
                 self.providers_preferences.push(sp);
             }
         }
+    }
+
+    /// Get MCP servers config as JSON string
+    pub fn get_mcp_servers_config_json(&self) -> String {
+        self.mcp_servers_config
+            .to_json()
+            .unwrap_or_else(|_| "{}".to_string())
+    }
+
+    /// Update MCP servers config from JSON
+    pub fn update_mcp_servers_from_json(&mut self, json: &str) -> Result<(), serde_json::Error> {
+        let config = McpServersConfig::from_json(json)?;
+        self.mcp_servers_config = config;
+        self.save();
+        Ok(())
+    }
+
+    /// Set MCP servers enabled state
+    pub fn set_mcp_servers_enabled(&mut self, enabled: bool) {
+        self.mcp_servers_config.enabled = enabled;
+        self.save();
+    }
+
+    /// Get MCP servers enabled state
+    pub fn get_mcp_servers_enabled(&self) -> bool {
+        self.mcp_servers_config.enabled
+    }
+
+    /// Set dangerous mode enabled
+    pub fn set_mcp_servers_dangerous_mode_enabled(&mut self, enabled: bool) {
+        self.mcp_servers_config.dangerous_mode_enabled = enabled;
+        self.save();
+    }
+
+    /// Get dangerous mode enabled state
+    pub fn get_mcp_servers_dangerous_mode_enabled(&self) -> bool {
+        self.mcp_servers_config.dangerous_mode_enabled
     }
 }
