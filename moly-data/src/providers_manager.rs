@@ -136,17 +136,9 @@ impl ProvidersManager {
 
     /// Get the provider ID for a given bot ID (by matching the provider string)
     pub fn get_provider_for_bot(&self, bot_id: &BotId) -> Option<&str> {
-        // First check exact match in our stored bots
+        // Check for a match in our stored bots
         for (provider_id, bots) in &self.provider_bots {
             if bots.iter().any(|b| &b.id == bot_id) {
-                return Some(provider_id);
-            }
-        }
-        // Check by provider string in the bot_id
-        let bot_provider = bot_id.provider();
-        for (provider_id, _) in &self.clients {
-            // Match by checking if the bot's provider contains a known provider URL pattern
-            if bot_provider.contains(provider_id) {
                 return Some(provider_id);
             }
         }

@@ -24,3 +24,4 @@ futures.workspace = true
 log.workspace = true
 chrono.workspace = true
 dirs = "5.0"
+indexmap.workspace = true
