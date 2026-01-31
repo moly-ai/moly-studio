@@ -3,6 +3,7 @@ use moly_kit::prelude::*;
 use std::sync::{Arc, Mutex};
 
 use crate::chats::Chats;
+use crate::mcp_servers::McpServersConfig;
 use crate::moly_client::MolyClient;
 use crate::preferences::Preferences;
 use crate::providers_manager::ProvidersManager;
@@ -184,5 +185,76 @@ impl Store {
             }
             StoreAction::None => {}
         }
+    }
+
+    // =========================================================================
+    // MCP Server Configuration Methods
+    // =========================================================================
+
+    /// Get MCP servers config reference
+    pub fn get_mcp_servers_config(&self) -> &McpServersConfig {
+        &self.preferences.mcp_servers_config
+    }
+
+    /// Get MCP servers config as JSON
+    pub fn get_mcp_servers_config_json(&self) -> String {
+        self.preferences.get_mcp_servers_config_json()
+    }
+
+    /// Update MCP servers from JSON
+    pub fn update_mcp_servers_from_json(&mut self, json: &str) -> Result<(), serde_json::Error> {
+        self.preferences.update_mcp_servers_from_json(json)
+    }
+
+    /// Set MCP servers enabled state
+    pub fn set_mcp_servers_enabled(&mut self, enabled: bool) {
+        self.preferences.set_mcp_servers_enabled(enabled);
+    }
+
+    /// Set dangerous mode enabled
+    pub fn set_mcp_servers_dangerous_mode_enabled(&mut self, enabled: bool) {
+        self.preferences.set_mcp_servers_dangerous_mode_enabled(enabled);
+    }
+
+    /// Creates a new MCP tool manager and loads servers asynchronously
+    /// Returns the manager immediately, loading happens in the background
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn create_and_load_mcp_tool_manager(&self) -> moly_kit::prelude::McpManagerClient {
+        use moly_kit::aitk::utils::asynchronous::spawn;
+        use moly_kit::prelude::McpManagerClient;
+
+        let tool_manager = McpManagerClient::new();
+
+        // Check if MCP servers are globally enabled
+        if !self.preferences.get_mcp_servers_enabled() {
+            return tool_manager;
+        }
+
+        let mcp_config = self.get_mcp_servers_config().clone();
+        tool_manager.set_dangerous_mode_enabled(mcp_config.dangerous_mode_enabled);
+        let tool_manager_clone = tool_manager.clone();
+
+        spawn(async move {
+            for (server_id, server_config) in mcp_config.list_enabled_servers() {
+                if let Some(transport) = server_config.to_transport() {
+                    match tool_manager_clone.add_server(server_id, transport).await {
+                        Ok(()) => {
+                            ::log::debug!("Successfully added MCP server: {}", server_id);
+                        }
+                        Err(e) => {
+                            ::log::error!("Failed to add MCP server '{}': {}", server_id, e);
+                        }
+                    }
+                }
+            }
+        });
+
+        tool_manager
+    }
+
+    /// Creates a new MCP tool manager (wasm version - no actual server loading)
+    #[cfg(target_arch = "wasm32")]
+    pub fn create_and_load_mcp_tool_manager(&self) -> moly_kit::prelude::McpManagerClient {
+        moly_kit::prelude::McpManagerClient::new()
     }
 }
