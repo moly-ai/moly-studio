@@ -2,6 +2,7 @@
 //!
 //! Model Context Protocol integration (Desktop Only).
 
+pub mod code_view;
 pub mod screen;
 
 use makepad_widgets::Cx;
@@ -22,6 +23,7 @@ impl MolyApp for MolyMcpApp {
     }
 
     fn live_design(cx: &mut Cx) {
+        crate::code_view::live_design(cx);
         crate::screen::design::live_design(cx);
     }
 }
