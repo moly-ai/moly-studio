@@ -22,6 +22,7 @@ live_design! {
     ICON_CHAT = dep("crate://self/resources/icons/chat.svg")
     ICON_MODELS = dep("crate://self/resources/icons/app.svg")
     ICON_SETTINGS = dep("crate://self/resources/icons/settings.svg")
+    ICON_MCP = dep("crate://self/resources/icons/mcp.svg")
 
     // Logo
     IMG_LOGO = dep("crate://self/resources/moly-logo.png")
@@ -222,6 +223,29 @@ live_design! {
                                 }
                             }
                         }
+                        mcp_btn = <NavButton> {
+                            btn_icon = <Icon> {
+                                draw_icon: {
+                                    svg_file: (ICON_MCP)
+                                    instance dark_mode: 0.0
+                                    fn get_color(self) -> vec4 {
+                                        // Green/teal - connection/protocol color
+                                        return mix(#10b981, #34d399, self.dark_mode);
+                                    }
+                                }
+                                icon_walk: {width: 20, height: 20}
+                            }
+                            btn_label = <Label> {
+                                text: "MCP"
+                                draw_text: {
+                                    instance dark_mode: 0.0
+                                    fn get_color(self) -> vec4 {
+                                        return mix(#1f2937, #f1f5f9, self.dark_mode);
+                                    }
+                                    text_style: <THEME_FONT_LABEL>{ font_size: 13.0 }
+                                }
+                            }
+                        }
 
                         // Spacer to push Settings to bottom
                         <View> { width: Fill, height: Fill }
@@ -287,6 +311,7 @@ enum NavigationTarget {
     #[default]
     Chat,
     Models,
+    Mcp,
     Settings,
 }
 
@@ -311,6 +336,7 @@ impl LiveHook for App {
             // Set current_view from loaded preferences
             self.current_view = match self.store.current_view() {
                 "Models" => NavigationTarget::Models,
+                "Mcp" => NavigationTarget::Mcp,
                 "Settings" => NavigationTarget::Settings,
                 _ => NavigationTarget::Chat,
             };
@@ -365,6 +391,9 @@ impl MatchEvent for App {
         if self.ui.view(ids!(models_btn)).finger_down(&actions).is_some() {
             self.navigate_to(cx, NavigationTarget::Models);
         }
+        if self.ui.view(ids!(mcp_btn)).finger_down(&actions).is_some() {
+            self.navigate_to(cx, NavigationTarget::Mcp);
+        }
         if self.ui.view(ids!(settings_btn)).finger_down(&actions).is_some() {
             self.navigate_to(cx, NavigationTarget::Settings);
         }
@@ -399,6 +428,7 @@ impl App {
         let view_name = match target {
             NavigationTarget::Chat => "Chat",
             NavigationTarget::Models => "Models",
+            NavigationTarget::Mcp => "Mcp",
             NavigationTarget::Settings => "Settings",
         };
         self.store.set_current_view(view_name);
@@ -411,6 +441,7 @@ impl App {
         // Update app visibility
         self.ui.widget(ids!(chat_app)).set_visible(cx, target == NavigationTarget::Chat);
         self.ui.widget(ids!(models_app)).set_visible(cx, target == NavigationTarget::Models);
+        self.ui.widget(ids!(mcp_app)).set_visible(cx, target == NavigationTarget::Mcp);
         self.ui.widget(ids!(settings_app)).set_visible(cx, target == NavigationTarget::Settings);
 
         // Notify ChatApp when it becomes visible (to refresh model list)
@@ -426,6 +457,9 @@ impl App {
         });
         self.ui.view(ids!(models_btn)).apply_over(cx, live! {
             draw_bg: { selected: (if target == NavigationTarget::Models { 1.0 } else { 0.0 }) }
+        });
+        self.ui.view(ids!(mcp_btn)).apply_over(cx, live! {
+            draw_bg: { selected: (if target == NavigationTarget::Mcp { 1.0 } else { 0.0 }) }
         });
         self.ui.view(ids!(settings_btn)).apply_over(cx, live! {
             draw_bg: { selected: (if target == NavigationTarget::Settings { 1.0 } else { 0.0 }) }
@@ -481,6 +515,16 @@ impl App {
             draw_text: { dark_mode: (dark_mode_value) }
         });
 
+        self.ui.view(ids!(mcp_btn)).apply_over(cx, live! {
+            draw_bg: { dark_mode: (dark_mode_value) }
+        });
+        self.ui.icon(ids!(mcp_btn.btn_icon)).apply_over(cx, live! {
+            draw_icon: { dark_mode: (dark_mode_value) }
+        });
+        self.ui.label(ids!(mcp_btn.btn_label)).apply_over(cx, live! {
+            draw_text: { dark_mode: (dark_mode_value) }
+        });
+
         self.ui.view(ids!(settings_btn)).apply_over(cx, live! {
             draw_bg: { dark_mode: (dark_mode_value) }
         });
@@ -519,6 +563,7 @@ impl App {
         // Show/hide button labels based on sidebar state
         self.ui.label(ids!(chat_btn.btn_label)).set_visible(cx, expanded);
         self.ui.label(ids!(models_btn.btn_label)).set_visible(cx, expanded);
+        self.ui.label(ids!(mcp_btn.btn_label)).set_visible(cx, expanded);
         self.ui.label(ids!(settings_btn.btn_label)).set_visible(cx, expanded);
 
         self.ui.redraw(cx);

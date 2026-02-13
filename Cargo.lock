@@ -2769,6 +2769,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -2851,6 +2852,7 @@ dependencies = [
  "env_logger",
  "futures",
  "log",
+ "makepad-code-editor",
  "makepad-widgets",
  "moly-chat",
  "moly-data",

@@ -3,7 +3,6 @@
 use makepad_widgets::*;
 
 use super::McpApp;
-use crate::code_view::MolyCodeView;
 
 live_design! {
     use link::theme::*;
@@ -12,46 +11,10 @@ live_design! {
     use moly_widgets::theme::*;
     use crate::code_view::MolyCodeView;
 
-    // Toggle switch styled like a modern switch
+    // Toggle switch - using standard CheckBox with minimal customization
     McpSwitch = <CheckBox> {
         width: 40, height: 20
         label_walk: { width: 0 }
-        draw_check: {
-            instance radius: 4.0
-            instance on_color: #4ade80
-            instance off_color: #64748b
-
-            fn pixel(self) -> vec4 {
-                let sdf = Sdf2d::viewport(self.pos * self.rect_size);
-                let sz = self.rect_size;
-
-                // Track background
-                sdf.box(1.0, 1.0, sz.x - 2.0, sz.y - 2.0, self.radius);
-                let bg_color = mix(self.off_color, self.on_color, self.selected);
-                sdf.fill(bg_color);
-
-                // Knob
-                let knob_size = sz.y - 6.0;
-                let knob_x = mix(3.0, sz.x - knob_size - 3.0, self.selected);
-                sdf.circle(knob_x + knob_size * 0.5, sz.y * 0.5, knob_size * 0.5);
-                sdf.fill(#ffffff);
-
-                return sdf.result;
-            }
-        }
-        animator: {
-            selected = {
-                default: off
-                off = {
-                    from: { all: Forward { duration: 0.15 } }
-                    apply: { draw_check: { selected: 0.0 } }
-                }
-                on = {
-                    from: { all: Forward { duration: 0.15 } }
-                    apply: { draw_check: { selected: 1.0 } }
-                }
-            }
-        }
     }
 
     SaveButton = <View> {
@@ -90,7 +53,7 @@ live_design! {
         <Label> {
             text: "Save and restart servers"
             draw_text: {
-                text_style: <THEME_FONT_SEMIBOLD>{ font_size: 11.0 }
+                text_style: <THEME_FONT_BOLD>{ font_size: 11.0 }
                 color: #ffffff
             }
         }
@@ -157,7 +120,7 @@ live_design! {
                     width: Fill, height: Fill
                     draw_bg: {
                         color: #1d2330
-                        radius: 6.0
+                        border_radius: 6.0
                     }
                     mcp_code_view = <MolyCodeView> {}
                 }
@@ -185,11 +148,11 @@ live_design! {
                             fn get_color(self) -> vec4 {
                                 return mix(#1f2937, #f1f5f9, self.dark_mode);
                             }
-                            text_style: <THEME_FONT_SEMIBOLD>{ font_size: 12.0 }
+                            text_style: <THEME_FONT_BOLD>{ font_size: 12.0 }
                         }
                     }
                     servers_enabled_switch = <McpSwitch> {
-                        animator: { selected = { default: on } }
+                        animator: { active = { default: on } }
                     }
                 }
 
@@ -222,12 +185,16 @@ live_design! {
                         danger_label = <Label> {
                             text: "Dangerous Mode"
                             draw_text: {
-                                text_style: <THEME_FONT_SEMIBOLD>{ font_size: 12.0 }
-                                color: #ef4444
+                                instance dark_mode: 0.0
+                                fn get_color(self) -> vec4 {
+                                    // Light: #ef4444, Dark: #fca5a5 (lighter red for dark mode)
+                                    return mix(#ef4444, #fca5a5, self.dark_mode);
+                                }
+                                text_style: <THEME_FONT_BOLD>{ font_size: 12.0 }
                             }
                         }
                         dangerous_mode_switch = <McpSwitch> {
-                            animator: { selected = { default: off } }
+                            animator: { active = { default: off } }
                         }
                     }
 
@@ -236,8 +203,12 @@ live_design! {
                         text: "WARNING: This mode automatically approves ALL tool calls without asking for permission. Only enable if you trust all configured MCP servers completely."
                         draw_text: {
                             wrap: Word
+                            instance dark_mode: 0.0
+                            fn get_color(self) -> vec4 {
+                                // Light: #f87171, Dark: #fecaca (lighter red for dark mode)
+                                return mix(#f87171, #fecaca, self.dark_mode);
+                            }
                             text_style: <THEME_FONT_REGULAR>{ font_size: 11.0 }
-                            color: #f87171
                         }
                     }
                 }
@@ -251,8 +222,13 @@ live_design! {
                         text: ""
                         draw_text: {
                             instance dark_mode: 0.0
+                            instance is_error: 0.0
                             fn get_color(self) -> vec4 {
-                                return mix(#059669, #34d399, self.dark_mode);
+                                // Success colors: Light: #059669, Dark: #34d399
+                                let success_color = mix(#059669, #34d399, self.dark_mode);
+                                // Error colors: Light: #dc2626, Dark: #f87171
+                                let error_color = mix(#dc2626, #f87171, self.dark_mode);
+                                return mix(success_color, error_color, self.is_error);
                             }
                             text_style: <THEME_FONT_REGULAR>{ font_size: 11.0 }
                         }

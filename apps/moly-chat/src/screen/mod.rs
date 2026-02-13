@@ -6,7 +6,7 @@ use makepad_widgets::*;
 use moly_kit::prelude::*;
 use moly_kit::aitk::controllers::chat::{ChatStateMutation, ChatTask};
 use moly_kit::aitk::protocol::{Bot, BotId, EntityAvatar};
-use moly_kit::widgets::model_selector::{BotGroup, create_lookup_grouping};
+use moly_kit::widgets::model_selector::BotGroup;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -396,9 +396,9 @@ impl ChatApp {
         let mut bot_groups: HashMap<BotId, BotGroup> = HashMap::new();
 
         for bot in store.providers_manager.get_all_bots() {
-            // Get provider ID from ProvidersManager (not from bot.id.provider() which returns URL)
+            // Get provider ID from ProvidersManager
             let provider_id = store.providers_manager.get_provider_for_bot(&bot.id)
-                .unwrap_or_else(|| bot.id.provider()); // fallback to URL if not found
+                .unwrap_or("unknown"); // fallback if not found
 
             let icon = self.get_provider_icon_path(provider_id)
                 .map(|path| EntityAvatar::Image(path));
@@ -414,10 +414,14 @@ impl ChatApp {
             );
         }
 
-        // Create grouping function
-        let grouping_fn = create_lookup_grouping(move |bot_id: &BotId| {
-            bot_groups.get(bot_id).cloned()
-        });
+        // Create grouping function that looks up the bot in our HashMap
+        let grouping_fn = move |bot: &Bot| -> BotGroup {
+            bot_groups.get(&bot.id).cloned().unwrap_or_else(|| BotGroup {
+                id: "unknown".to_string(),
+                label: "Unknown".to_string(),
+                icon: None,
+            })
+        };
 
         // Set grouping on the ModelSelector inside PromptInput
         let chat = self.view.chat(ids!(chat));
@@ -425,7 +429,7 @@ impl ChatApp {
             .prompt_input_ref()
             .widget(ids!(model_selector))
             .as_model_selector()
-            .set_grouping(Some(grouping_fn));
+            .set_grouping(grouping_fn);
     }
 
     /// Set our controller on the Chat widget if not already done
@@ -1254,7 +1258,7 @@ impl ChatApp {
 
         // Parse the saved model to extract model name and provider
         // BotId format: <id_len>;<model_id>@<provider>
-        let (saved_model_name, saved_provider) = Self::parse_bot_id_string(&saved_model);
+        let (saved_model_name, _saved_provider) = Self::parse_bot_id_string(&saved_model);
 
         // Check if this model exists in the enabled bots
         let all_bots = &enabled_bots;
@@ -1265,17 +1269,14 @@ impl ChatApp {
         // If no exact match, try matching by model name (handling models/ prefix)
         if matching_bot.is_none() {
             matching_bot = all_bots.iter().find(|bot| {
-                let bot_model_name = bot.id.id();
-                let bot_provider = bot.id.provider();
-                // Match if providers are the same and either:
+                let bot_model_name = bot.id.as_str();
+                // Match if either:
                 // 1. Model names match exactly
                 // 2. Bot model is "models/<saved_model>"
                 // 3. Saved model is "models/<bot_model>"
-                bot_provider == saved_provider && (
-                    bot_model_name == saved_model_name ||
-                    bot_model_name == format!("models/{}", saved_model_name) ||
-                    saved_model_name == format!("models/{}", bot_model_name)
-                )
+                bot_model_name == saved_model_name ||
+                bot_model_name == format!("models/{}", saved_model_name) ||
+                saved_model_name == format!("models/{}", bot_model_name)
             });
         }
 

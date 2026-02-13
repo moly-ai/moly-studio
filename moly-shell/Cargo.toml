@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 # Makepad
 makepad-widgets.workspace = true
+makepad-code-editor.workspace = true
 
 # Internal workspace crates
 moly-widgets = { path = "../moly-widgets" }

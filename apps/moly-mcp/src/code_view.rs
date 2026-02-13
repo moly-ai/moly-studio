@@ -10,6 +10,7 @@ live_design! {
     use link::theme::*;
     use link::shaders::*;
     use moly_widgets::theme::*;
+    use makepad_code_editor::code_editor::CodeEditor;
 
     pub MolyCodeView = {{MolyCodeView}} {
         editor: <CodeEditor> {
@@ -21,8 +22,8 @@ live_design! {
             show_gutter: false
             draw_bg: { color: #1d2330 }
             draw_text: {
-                text_style: {
-                    font_size: 10,
+                text_style: <THEME_FONT_CODE> {
+                    font_size: 11,
                 }
             }
 
